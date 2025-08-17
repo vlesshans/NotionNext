@@ -7,11 +7,12 @@ jobs:
   fix-react:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout
+      # 1. Checkout 仓库
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: true  # 保留 token 用于 push
 
       # 2. 设置 Node.js
       - name: Setup Node.js
@@ -28,10 +29,8 @@ jobs:
       - name: Downgrade React
         run: yarn add react@18.2.0 react-dom@18.2.0
 
-      # 5. 创建或更新 fix-react 分支
+      # 5. 创建或更新 fix-react 分支并 push
       - name: Create/Update fix-react branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
