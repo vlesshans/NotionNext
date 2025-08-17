@@ -7,29 +7,24 @@ jobs:
   fix-react:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout 仓库
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true  # 保留 token 用于 push
+          persist-credentials: true
 
-      # 2. 设置 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'yarn'
 
-      # 3. 安装依赖
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # 4. 修改 React 版本
       - name: Downgrade React
         run: yarn add react@18.2.0 react-dom@18.2.0
 
-      # 5. 创建或更新 fix-react 分支并 push
       - name: Create/Update fix-react branch
         run: |
           git config user.name "github-actions"
