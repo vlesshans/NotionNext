@@ -1,47 +1,62 @@
 name: Fix React Version
 
-# 手动触发
+# 手动触发，也可加 push 或 pull_request 触发
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write  # 确保 GITHUB_TOKEN 可以推送
 
 jobs:
   fix-react:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 检出代码
+      # 1. 检出仓库
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 保证可以创建分支
+          fetch-depth: 0
 
-      # 2️⃣ 设置 Node.js
+      # 2. 设置 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: 'yarn'
 
-      # 3️⃣ 安装依赖
-      - name: Install dependencies
-        run: yarn install
-
-      # 4️⃣ 创建或切换到 fix-react 分支
-      - name: Create fix-react branch
+      # 3. 检查是否已有 fix-react 分支，如果没有则创建
+      - name: Create or checkout fix-react branch
         run: |
-          git fetch origin fix-react || echo "branch does not exist"
-          git checkout -B fix-react
+          git fetch origin
+          if git show-ref --verify --quiet refs/heads/fix-react; then
+            echo "Branch fix-react exists locally, checking out"
+            git checkout fix-react
+          else
+            if git ls-remote --exit-code --heads origin fix-react; then
+              echo "Branch fix-react exists remotely, checking out"
+              git checkout -b fix-react origin/fix-react
+            else
+              echo "Creating new branch fix-react"
+              git checkout -b fix-react
+            fi
+          fi
 
-      # 5️⃣ 修改 package.json 中 React 和 React-DOM 版本
+      # 4. 修改 React 版本
       - name: Update React version
         run: |
+          yarn set version stable
           yarn add react@18.2.0 react-dom@18.2.0
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json yarn.lock
-          git commit -m "fix: upgrade React and React-DOM to 18.2.0" || echo "No changes to commit"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
 
-      # 6️⃣ 推送分支回仓库
-      - name: Push changes
+      # 5. 提交并推送
+      - name: Commit and push changes
         run: |
-          git push -u origin fix-react --force
+          git add package.json yarn.lock
+          if git diff-index --quiet HEAD; then
+            echo "No changes to commit"
+          else
+            git commit -m "fix: update React and React-DOM to 18.2.0"
+            git push origin fix-react --force
+          fi
