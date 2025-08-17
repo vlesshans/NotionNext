@@ -1,35 +1,47 @@
-name: Fix React version
+name: Fix React Version
 
+# 手动触发
 on:
   workflow_dispatch:
 
 jobs:
   fix-react:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          persist-credentials: true
+          fetch-depth: 0  # 保证可以创建分支
 
+      # 2️⃣ 设置 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
           cache: 'yarn'
 
+      # 3️⃣ 安装依赖
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
-      - name: Downgrade React
-        run: yarn add react@18.2.0 react-dom@18.2.0
-
-      - name: Create/Update fix-react branch
+      # 4️⃣ 创建或切换到 fix-react 分支
+      - name: Create fix-react branch
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git fetch origin fix-react || echo "branch does not exist"
           git checkout -B fix-react
+
+      # 5️⃣ 修改 package.json 中 React 和 React-DOM 版本
+      - name: Update React version
+        run: |
+          yarn add react@18.2.0 react-dom@18.2.0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json yarn.lock
-          git commit -m "Fix React version to 18.2.0" || echo "No changes to commit"
-          git push origin fix-react --force
+          git commit -m "fix: upgrade React and React-DOM to 18.2.0" || echo "No changes to commit"
+
+      # 6️⃣ 推送分支回仓库
+      - name: Push changes
+        run: |
+          git push -u origin fix-react --force
